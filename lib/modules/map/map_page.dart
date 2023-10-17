@@ -19,7 +19,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void initState() {
-    bloc.add(MapEventGetLocation());
+    bloc.add(MapEventFetchMapLocations());
     super.initState();
   }
 
@@ -40,11 +40,19 @@ class _MapPageState extends State<MapPage> {
                 Icons.gps_fixed,
                 color: Colors.black.withOpacity(0.5),
               ),
-              onPressed: () => _mapController.animateCamera(
-                CameraUpdate.newCameraPosition(
-                    CameraPosition(target: state.position, zoom: 15)),
-              ),
-            )
+              onPressed: () {
+                bloc.add(MapEventRefreshCurrentLocation());
+
+                _mapController.animateCamera(
+                  CameraUpdate.newCameraPosition(
+                    CameraPosition(
+                      target: state.position,
+                      zoom: 15,
+                    ),
+                  ),
+                );
+                setState(() {});
+              })
           : null,
       body: SafeArea(
         child: BlocBuilder<MapBloc, MapState>(
@@ -63,15 +71,72 @@ class _MapPageState extends State<MapPage> {
                   ),
                 );
               case MapPageStatus.done:
+                // markers.add(state.originMarker);
                 return GoogleMap(
                   zoomControlsEnabled: false,
                   myLocationButtonEnabled: false,
                   onMapCreated: (controller) => _mapController = controller,
+                  markers: state.markers.toSet(),
                   initialCameraPosition: CameraPosition(
                     target: state.position,
                     zoom: 15,
                   ),
-                  onTap: (argument) => print('tapped'),
+                  onTap: (argument) {
+                    final newMarker = Marker(
+                      markerId: MarkerId(state.markers.length.toString()),
+                      position: argument,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueBlue,
+                      ),
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        builder: (context) {
+                          final selectedMarker = state.markers.firstWhere(
+                              (marker) => marker.position == argument);
+
+                          return Container(
+                            padding: const EdgeInsets.only(
+                              bottom: 24,
+                              left: 24,
+                              right: 24,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  selectedMarker.markerId.toString(),
+                                ),
+                                Text(
+                                  'Latitude: ${selectedMarker.position.latitude}',
+                                ),
+                                Text(
+                                  'Longitude: ${selectedMarker.position.longitude}',
+                                ),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      bloc.add(
+                                        MapEventRemoveLocation(
+                                            marker: selectedMarker),
+                                      );
+
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Remover'),
+                                  ),
+                                )
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    );
+
+                    bloc.add(MapEventAddNewLocation(newMarker: newMarker));
+                  },
                 );
             }
           },

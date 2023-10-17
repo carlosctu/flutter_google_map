@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/domain/use_cases/use_cases.dart';
+import 'package:flutter_map/domain/use_cases/get_current_location_use_case.dart';
 import 'package:flutter_map/modules/map/bloc/map_bloc.dart';
 import 'package:flutter_map/modules/map/map_page.dart';
 
@@ -29,6 +29,7 @@ class FlutterMapApp extends StatelessWidget {
         ],
         child: MaterialApp(
           title: 'Flutter Maps',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
             primarySwatch: Colors.blue,
           ),
