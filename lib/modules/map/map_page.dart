@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/modules/map/widgets/map_body.dart';
+import 'package:flutter_map/modules/map/widgets/map_floating_location_button.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/modules/map/bloc/map_bloc.dart';
 import 'package:flutter_map/modules/map/bloc/map_event.dart';
 import 'package:flutter_map/modules/map/bloc/map_state.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -13,7 +17,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  late GoogleMapController _mapController;
+  final Completer<GoogleMapController> _mapController = Completer();
 
   MapBloc get bloc => context.read<MapBloc>();
 
@@ -25,34 +29,22 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _disposeMapController();
     super.dispose();
+  }
+
+  Future<void> _disposeMapController() async {
+    final GoogleMapController controller = await _mapController.future;
+    controller.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<MapBloc>().state;
+
     return Scaffold(
       floatingActionButton: state.status == MapPageStatus.done
-          ? FloatingActionButton(
-              backgroundColor: Colors.grey[100],
-              child: Icon(
-                Icons.gps_fixed,
-                color: Colors.black.withOpacity(0.5),
-              ),
-              onPressed: () {
-                bloc.add(MapEventRefreshCurrentLocation());
-
-                _mapController.animateCamera(
-                  CameraUpdate.newCameraPosition(
-                    CameraPosition(
-                      target: state.position,
-                      zoom: 15,
-                    ),
-                  ),
-                );
-                setState(() {});
-              })
+          ? MapFloatingLocationButton(mapController: _mapController)
           : null,
       body: SafeArea(
         child: BlocBuilder<MapBloc, MapState>(
@@ -71,73 +63,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                 );
               case MapPageStatus.done:
-                // markers.add(state.originMarker);
-                return GoogleMap(
-                  zoomControlsEnabled: false,
-                  myLocationButtonEnabled: false,
-                  onMapCreated: (controller) => _mapController = controller,
-                  markers: state.markers.toSet(),
-                  initialCameraPosition: CameraPosition(
-                    target: state.position,
-                    zoom: 15,
-                  ),
-                  onTap: (argument) {
-                    final newMarker = Marker(
-                      markerId: MarkerId(state.markers.length.toString()),
-                      position: argument,
-                      icon: BitmapDescriptor.defaultMarkerWithHue(
-                        BitmapDescriptor.hueBlue,
-                      ),
-                      onTap: () => showModalBottomSheet(
-                        context: context,
-                        builder: (context) {
-                          final selectedMarker = state.markers.firstWhere(
-                              (marker) => marker.position == argument);
-
-                          return Container(
-                            padding: const EdgeInsets.only(
-                              bottom: 24,
-                              left: 24,
-                              right: 24,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  selectedMarker.markerId.toString(),
-                                ),
-                                Text(
-                                  'Latitude: ${selectedMarker.position.latitude}',
-                                ),
-                                Text(
-                                  'Longitude: ${selectedMarker.position.longitude}',
-                                ),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      bloc.add(
-                                        MapEventRemoveLocation(
-                                            marker: selectedMarker),
-                                      );
-
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Remover'),
-                                  ),
-                                )
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    );
-
-                    bloc.add(MapEventAddNewLocation(newMarker: newMarker));
-                  },
-                );
+                return MapBody(mapController: _mapController);
             }
           },
         ),
