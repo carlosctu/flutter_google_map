@@ -1,4 +1,4 @@
-# Proyecto de Mapa Interactivo con Google Maps en Flutter
+# Google Maps en Flutter
 
 Este proyecto en Flutter te permite crear un mapa interactivo utilizando Google Maps. Puedes agregar y quitar marcadores en el mapa, así como verificar tu ubicación actual.
 
