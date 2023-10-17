@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/domain/model/marker_location_model.dart';
 import 'package:flutter_map/modules/map/bloc/map_bloc.dart';
 import 'package:flutter_map/modules/map/bloc/map_event.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -22,7 +23,21 @@ class MapBody extends StatelessWidget {
       zoomControlsEnabled: false,
       myLocationButtonEnabled: false,
       onMapCreated: (controller) => mapController.complete(controller),
-      markers: state.markers.toSet(),
+      markers: state.markers.map(
+        (marker) {
+          return Marker(
+            markerId: MarkerId(marker.id),
+            position: LatLng(marker.latitude, marker.longitude),
+            icon: marker.markerColor,
+            onTap: () => showModalBottomSheet(
+              context: context,
+              builder: (context) => MarkerBottomSheet(
+                selectedMarker: marker,
+              ),
+            ),
+          );
+        },
+      ).toSet(),
       initialCameraPosition: CameraPosition(
         target: state.position,
         zoom: 15,
@@ -37,8 +52,8 @@ class MapBody extends StatelessWidget {
           onTap: () => showModalBottomSheet(
             context: context,
             builder: (context) {
-              final selectedMarker = state.markers
-                  .firstWhere((marker) => marker.position == argument);
+              final selectedMarker = state.markers.firstWhere((marker) =>
+                  LatLng(marker.latitude, marker.longitude) == argument);
 
               return MarkerBottomSheet(
                 selectedMarker: selectedMarker,
@@ -54,7 +69,7 @@ class MapBody extends StatelessWidget {
 }
 
 class MarkerBottomSheet extends StatelessWidget {
-  final Marker selectedMarker;
+  final MarkerLocationModel selectedMarker;
 
   const MarkerBottomSheet({
     super.key,
@@ -72,13 +87,13 @@ class MarkerBottomSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Marker #${selectedMarker.markerId.value.toString()}",
+            "Marker #${selectedMarker.id}",
             style: const TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 24),
-          Text('Latitude: ${selectedMarker.position.latitude}'),
+          Text('Latitude: ${selectedMarker.latitude}'),
           const SizedBox(height: 12),
-          Text('Longitude: ${selectedMarker.position.longitude}'),
+          Text('Longitude: ${selectedMarker.longitude}'),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.center,

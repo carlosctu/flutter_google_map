@@ -1,3 +1,4 @@
+import 'package:flutter_map/domain/model/marker_location_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 enum MapPageStatus { done, loading, error }
@@ -6,7 +7,7 @@ class MapState {
   final MapPageStatus status;
   final Exception? exception;
   final LatLng position;
-  final List<Marker> markers;
+  final List<MarkerLocationModel> markers;
 
   const MapState._({
     this.status = MapPageStatus.loading,
@@ -19,14 +20,17 @@ class MapState {
 
   MapState loadingState() => copyWith(status: MapPageStatus.loading);
 
-  MapState validState(LatLng currentPosition, List<Marker> markers) {
+  MapState validState(
+      LatLng currentPosition, List<MarkerLocationModel> markers) {
     // Adding this new list, because cannot add
     // an unmodifiable list
-    List<Marker> markersList = [];
+    List<MarkerLocationModel> markersList = [];
 
-    final currentPositionMarker = Marker(
-      markerId: const MarkerId('origin'),
-      position: currentPosition,
+    final currentPositionMarker = MarkerLocationModel(
+      id: 'origin',
+      latitude: currentPosition.latitude,
+      longitude: currentPosition.longitude,
+      markerColor: BitmapDescriptor.defaultMarker,
     );
 
     if (markers.isNotEmpty) {
@@ -49,12 +53,19 @@ class MapState {
       );
 
   MapState updateMarkers(Marker newMarker) {
-    markers.add(newMarker);
+    markers.add(
+      MarkerLocationModel(
+        id: newMarker.markerId.value,
+        latitude: newMarker.position.latitude,
+        longitude: newMarker.position.longitude,
+        markerColor: newMarker.icon,
+      ),
+    );
     return copyWith(markers: markers);
   }
 
-  MapState removeMarker(Marker marker) {
-    markers.removeWhere((e) => e.markerId == marker.markerId);
+  MapState removeMarker(MarkerLocationModel marker) {
+    markers.removeWhere((e) => e.id == marker.id);
     return copyWith(markers: markers);
   }
 
@@ -66,7 +77,7 @@ class MapState {
     MapPageStatus? status,
     Exception? exception,
     LatLng? position,
-    List<Marker>? markers,
+    List<MarkerLocationModel>? markers,
   }) {
     return MapState._(
       status: status ?? this.status,

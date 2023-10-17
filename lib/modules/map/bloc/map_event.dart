@@ -1,3 +1,4 @@
+import 'package:flutter_map/domain/model/marker_location_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 abstract class MapEvent {}
@@ -14,7 +15,7 @@ class MapEventAddNewLocation extends MapEvent {
 }
 
 class MapEventRemoveLocation extends MapEvent {
-  final Marker marker;
+  final MarkerLocationModel marker;
   MapEventRemoveLocation({
     required this.marker,
   });
